@@ -1012,7 +1012,7 @@ class Chance:
     def matches_move(player, chance):
 
         matches = False
-        if player.move:
+        if player.move is not None:
 
             if chance <= Chances.PURR_DRAW:
                 matches = player.move == Moves.PURR
@@ -1024,7 +1024,7 @@ class Chance:
                 matches = player.move == Moves.SCRATCH
 
         Logger.log(player.username + "'s selected move: " + str(player.move))
-        Logger.log(player.username + "'s chance they with to use: " + str(chance))
+        Logger.log(player.username + "'s chance they want to use: " + str(chance))
         Logger.log(player.username + " chance matches move: " + str(matches))
         return matches
 
