@@ -31,6 +31,11 @@ class Session(Thread):
 
         Logger.log("New session started")
 
+        # data = self.client.recv(1024, sock.MSG_PEEK)
+        # Coming to a server near you
+        # Will be used to detect web browser connection
+        # Logger.log("Peeked Message " + str(data))
+
         while self.server_running:
 
             # Receive flag and incoming data size
@@ -70,22 +75,24 @@ class Session(Thread):
                    " " + str(request.size))
         Logger.log("Body: " + str(request.body))
 
-        # Check user identity for sensitive operations
-        if flag > Flags.LOGOUT:
-            if not self.verified(request):
-
-                Logger.log(
-                    self.userprofile['username'] + " is not authorized to use flag " +
-                    str(flag) + ", closing this connection")
-
-                self.kill()
-
         # Check if the flag is valid
         if Flags.valid_flag(flag):
 
+            # Check user identity for sensitive operations
+            if flag > Flags.LOGOUT:
+                if not self.verified(request):
+                    Logger.log(
+                        self.userprofile['username'] + " is not authorized to use flag " +
+                        str(flag) + ", closing this connection")
+
+                    self.kill()
+                    return
+
+            # Check if the flag pertains to the session
             if flag in request_map:
                 request_map[flag](self, request)
 
+            # Check if the flag pertains to a match
             elif self.match:
 
                 self.match.lock.acquire()
