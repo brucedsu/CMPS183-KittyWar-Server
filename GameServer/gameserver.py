@@ -3,13 +3,13 @@
 # TCP Port 2056
 
 import socket as sock
+import threading
 import tkinter
 import tkinter.scrolledtext
 
 from network import Network
 from sessions import Session
 from match import Match, Player
-from threading import Thread, Event
 from queue import Queue
 from logger import Logger
 
@@ -23,11 +23,11 @@ def main():
     server_address = ('localhost', 2056)
 
     # Prepare lobby and match making thread
-    match_event = Event()
+    match_event = threading.Event()
     lobby = Queue()
 
     # Start match making thread
-    matchmaker_thread = Thread(target=match_maker, args=(match_event, lobby))
+    matchmaker_thread = threading.Thread(target=match_maker, args=(match_event, lobby))
     matchmaker_thread.daemon = True
     matchmaker_thread.start()
 
@@ -47,7 +47,7 @@ def main():
     Session.match_event = match_event
 
     # Create thread dedicated to listening for clients
-    polling_thread = Thread(target=poll_connections, args=(server,))
+    polling_thread = threading.Thread(target=poll_connections, args=(server,))
     polling_thread.daemon = True
     polling_thread.start()
 
@@ -115,7 +115,6 @@ def poll_connections(server):
 
     Logger.log("Server started")
     Logger.log(server.getsockname())
-    connections = []
 
     while server_running:
 
@@ -129,11 +128,21 @@ def poll_connections(server):
         new_session = Session((client, client_address))
         new_session.start()
 
-        connections.append(new_session)
+    Logger.log("Closing all sessions")
+    for live_thread in threading.enumerate():
+        if live_thread.name == 'session':
+            live_thread.kill()
 
-    for connection in connections:
-        if connection.is_alive():
-            connection.kill()
+    active_count = threading.active_count()
+    while active_count >= 4:
+
+        update_count = threading.active_count()
+        if active_count > update_count:
+
+            active_count = update_count
+            Logger.log("Sessions remaining: " + str(active_count - 3))
+
+    Logger.log("*Safe to close server application*")
 
     server.shutdown(sock.SHUT_RDWR)
     server.close()
@@ -182,10 +191,14 @@ def create_match(session1, session2):
 
 def shutdown_server():
 
-    Logger.log("Server stopping")
     global server_running
-    server_running = False
+    if server_running:
 
+        Logger.log("Server stopping")
+        server_running = False
+
+    else:
+        Logger.log("Server already stopped")
 
 if __name__ == "__main__":
     main()
