@@ -18,6 +18,7 @@ class Session(Thread):
     def __init__(self, client_info):
 
         Thread.__init__(self)
+        self.name = 'session'
         self.daemon = False
 
         self.authenticated = False
@@ -48,24 +49,29 @@ class Session(Thread):
             self.process_request(request)
 
         # Start shutting down session thread
+        # If the user has disconnected during a match they incur a loss
+        if self.match:
+            self.match.disconnect(self.userprofile['username'])
+
         self.logout()
+        self.shutdown()
         self.client.close()
 
         Logger.log(self.userprofile['username'] + " disconnected")
         Logger.log(
             "Session thread for " + self.userprofile['username'] + " ending")
 
-    def kill(self):
-
-        # If the user has disconnected during a match they incur a loss
-        if self.match:
-            self.match.disconnect(self.userprofile['username'])
+    def shutdown(self):
 
         try:
             self.client.shutdown(sock.SHUT_RDWR)
         except OSError:
             pass
+
+    def kill(self):
+
         self.server_running = False
+        self.shutdown()
 
     def process_request(self, request):
 
@@ -127,7 +133,7 @@ class Session(Thread):
 
         # If the user does not send username or connection error close connection
         if username is None:
-            self.kill()
+            self.shutdown()
 
         # Log the username
         Logger.log("Body: " + username)
@@ -163,7 +169,7 @@ class Session(Thread):
             # Username is verified through django server so force close connection
             Logger.log(
                 "No username/id found for " + username + ", force closing connection")
-            self.kill()
+            self.shutdown()
 
         Network.send_data(self.userprofile['username'], self.client, response)
 
@@ -177,7 +183,7 @@ class Session(Thread):
 
             Logger.log(self.userprofile['username'] + " is logging out")
 
-            sql_stmt = 'UPDATE KittyWar_userprofile SET token='' WHERE user_id=\'{}\';'
+            sql_stmt = "UPDATE KittyWar_userprofile SET token='' WHERE user_id=\'{}\';"
             Network.sql_query(sql_stmt.format(self.userprofile['userid']))
             self.authenticated = False
 
@@ -188,7 +194,7 @@ class Session(Thread):
             response.append(Flags.FAILURE)
 
         Network.send_data(self.userprofile['username'], self.client, response)
-        self.kill()
+        self.shutdown()
 
     def _user_profile(self):
 
