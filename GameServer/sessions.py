@@ -1,6 +1,6 @@
 import socket as sock
 
-from network import Network, Flags
+from network import Network, WNetwork, Flags
 from threading import Thread
 from time import sleep
 from logger import Logger
@@ -21,6 +21,9 @@ class Session(Thread):
         self.name = 'session'
         self.daemon = False
 
+        self.network = Network
+        self.recv_size = 28
+
         self.authenticated = False
         self.userprofile = {'username': 'Anonymous'}
         self.client = client_info[0]
@@ -32,20 +35,26 @@ class Session(Thread):
 
         Logger.log("New session started")
 
-        # data = self.client.recv(1024, sock.MSG_PEEK)
-        # Coming to a server near you
-        # Will be used to detect web browser connection
-        # Logger.log("Peeked Message " + str(data))
+        if Network.check_wconnection(self.client):
+
+            self.network = WNetwork
+            self.network.handshake(self.client)
+            self.recv_size = 2
 
         while self.server_running:
 
             # Receive flag and incoming data size
-            data = Network.receive_data(self.client, 28)
+            data = self.network.receive_data(self.client, self.recv_size)
             if data is None:
                 break
 
             # Process clients request and check if successful
-            request = Network.parse_request(self.client, data)
+            request = self.network.parse_request(self.client, data)
+
+            # Block web socket connections from continuing
+            if self.recv_size == 2:
+                continue
+
             self.process_request(request)
 
         # Start shutting down session thread
@@ -176,9 +185,6 @@ class Session(Thread):
     # Logs the user out by deleting their token and ending the session
     def logout(self, request=None):
 
-        # Generate response to notify logout completed
-        response = Network.generate_responseh(Flags.LOGOUT, Flags.ONE_BYTE)
-
         if self.authenticated:
 
             Logger.log(self.userprofile['username'] + " is logging out")
@@ -188,12 +194,7 @@ class Session(Thread):
             self.authenticated = False
 
             Logger.log(self.userprofile['username'] + " has logged out")
-            response.append(Flags.SUCCESS)
 
-        else:
-            response.append(Flags.FAILURE)
-
-        Network.send_data(self.userprofile['username'], self.client, response)
         self.shutdown()
 
     def _user_profile(self):
