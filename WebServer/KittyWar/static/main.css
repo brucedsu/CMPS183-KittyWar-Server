@@ -1,0 +1,235 @@
+/*Margin adds space on the outside of the element and oushes neraby elements away; Padding adds space on the inside of the element and make space between the elements'edge and its content*/
+a {
+  /*underline of text*/
+  text-decoration: none;
+  color: #9932CC;
+  font-size: 1.2em;
+}
+
+h1 {
+  /*overide logo ID selector?*/
+  font-family: 'Changa One', sans-serif;
+  color: #000;
+}
+
+body {
+  background: url(cat/register.jpg) no-repeat center;
+  -webkit-background-size: cover;
+}
+
+/*image change as the windows change */
+img {
+  max-width: 100%;
+}
+
+h3 {
+  margin: 0 0 1em 0;
+  color: #9932CC;
+}
+
+.profile {
+  margin: 0 0 1em 0;
+  color: #bdc3c7;
+}
+header {
+
+  padding-bottom: 0;
+}
+
+nav {
+  text-align: center;
+  padding: 5px 0;
+  margin: 5px 0 0;
+}
+
+nav ul {
+  list-style: center;
+  padding: 10px 0;
+  margin: 20px 0 0;
+}
+
+nav li {
+  display: inline-block;
+}
+
+nav a {
+  font-weight: 800;
+  padding: 15px 10px;
+}
+
+/*sudo class*/
+nav a, nav a:visited {
+  color: #000;
+}
+
+nav a.selected, nav a:hover {
+  color: #e6539c;
+}
+#index-title {
+  margin-left: 50px;
+}
+/*decorate style between div in html*/
+#wrapper {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 0 5%;
+}
+
+header {
+  float: left;
+  margin: 0 0 30px 0;
+  padding: 5px 0 0 0;
+  width: 100%;
+
+}
+
+.search_key {
+  margin: 0 0 30px 30px;
+  width: 166px;
+  height: 23px;
+  line-height: 23px;
+  background: #fff;
+  border: 2px inset buttonface;
+  padding: 0 4px;
+  float: left;
+}
+.submit {
+  width: 34px;
+  height: 25px;
+  line-height: 25px;
+  background: none;
+  cursor: pointer;
+}
+
+#searchsub {
+  background: url(../img/search.jpg );
+  background-repeat: no-repeat;
+  background-size: 34px 25px;
+  align-items: flex-start;
+  text-align: center;
+  color: buttontext;
+  padding: 2px 6px 3px;
+  border: 2px inset buttonface;
+  border-image-source: initial;
+  border-image-slice: initial;
+  border-image-width: initial;
+  border-image-outset: initial;
+  border-image-repeat: initial;
+  background-color: buttonface;
+  box-sizing: border-box;
+
+}
+#logo {
+  text-align: center;
+  margin: 0;
+}
+
+h1 {
+  margin: 15px 0;
+  font-size: 1.75em;
+  font-weight: normal;
+  line-height: 0.8em;
+}
+
+
+
+/*page porfolio*/
+
+#gallery li {
+
+  color: #000;
+  display: inline-block;
+  width: 40%;
+  margin: 2%;
+}
+
+#gallery li a p {
+  margin: 0;
+  padding: 5%;
+  font-size: 0.75em;
+  color: #9932CC;
+}
+/*page:about*/
+
+.profile-photo {
+  display: block;
+  max-width: 150px;
+  margin: 0 auto 30px;
+  border-radius: 100%
+}
+/*page:contact*/
+.contact-info {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.9em;
+}
+
+.contact-info a {
+  display: block;
+  min-height: 20px;
+  background-repeat: no-repeat;
+  background-size: 20px 20px;
+  padding: 0 0 0 30px;
+  margin: 0 0 10px;
+}
+.contact-info li.phone a {
+  background-image: url('../img/phone.png');
+}
+
+.contact-info li.mail a {
+  background-image: url('../img/mail.png');
+}
+/*color*/
+body {
+  background-color: #fff;
+  padding-top: 20px;
+}
+
+
+footer {
+  font-size: 1.0em;
+  text-align: center;
+  clear: both;
+  padding-top: 50px;
+  color:  #fff;
+}
+
+.social-icon {
+  width: 20px;
+  height: 20px;
+  margin: 0 5px;
+}
+nav {
+  background: url(../img/header-background.jpg);
+}
+
+
+
+
+#catimg img{
+  margin: 0;
+  float: left;
+  padding-right: 100px;
+}
+
+#catimg {
+  padding-bottom: 180px;
+}
+
+#abilityimg {
+  text-align: center;
+}
+
+#index-title {
+  position: fixed;
+}
+
+#faq {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  text-align: center;
+  color: #9932CC;
+  background: url(cat/funcbg.jpg) ;
+}
+
