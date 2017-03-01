@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+
+{% load static %}
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Find Match Here!!!</title>
+
+    <link href='http://fonts.googleapis.com/css?family=Changa+One|Open+Sans:400italic,700italic,400,700,800' rel='stylesheet' type='text/css'>
+    <link rel = "stylesheet" type = "text/css" href = "{% static 'main.css' %}" />
+    <link rel = "stylesheet" type = "text/css" href = "{% static 'normalize.css' %}" />
+    <link rel = "stylesheet" type = "text/css" href = "{% static 'responsive.css' %}" />
+</head>
+
+<body>
+<header>
+    <div id="index-title">
+    <h1>Find Match Here!!!</h1>
+    <a href="{% url 'kittywar:logout' %}"> <b>Log out</b> </a>
+    </div>
+    <nav>
+      <!--unordered list-->
+      <ul>
+        <li><a href="{% url 'kittywar:home' %}" >Cats</a></li>
+        <li><a href="{% url 'kittywar:chance' %}">Chance Cards</a></li>
+        <li><a href="{% url 'kittywar:play' %} ">Find Match Here!</a></li>
+      </ul>
+    </nav>
+
+</header>
+
+<footer>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</footer>
+
+</body>
+</html>
