@@ -1,6 +1,6 @@
 import random
 
-from logger import Logger
+from logger import Logger, LogCodes
 from network import Network, Flags
 from threading import Lock
 from enum import IntEnum
@@ -41,6 +41,7 @@ class Player:
         self.reverse = False
         self.irreversible = False
         self.invulnerable = False
+        self.spotlight = False
 
         self.chance_cards = []
         self.used_cards = []
@@ -60,12 +61,15 @@ class Player:
     def cat(self, cat):
 
         self.__cat = cat
-        self.health = Cats.get_hp(cat)
+        self.health = cat.hp
 
+    # Grab the players chance card at a certain index
+    # index 1 = most recently added card
+    # index 2 = second most recently added card... etc.
     @property
-    def chance_card(self):
+    def chance_card(self, index=1):
 
-        last_index = len(self.chance_cards) - 1
+        last_index = len(self.chance_cards) - index
 
         if last_index >= 0:
             return self.chance_cards[last_index]
@@ -114,8 +118,8 @@ class Match:
 
     def disconnect(self, username):
 
-        Logger.log(username + " has disconnected from their match")
-        Logger.log(username + " will be assessed with a loss")
+        Logger.log(username + " has disconnected from their match", LogCodes.Match)
+        Logger.log(username + " will be assessed with a loss", LogCodes.Match)
 
         self.match_valid = False
 
@@ -129,20 +133,20 @@ class Match:
     def end_match(self):
 
         Logger.log("Match ending for " + self.player1.username + " & " +
-                   self.player2.username + ", a win condition has been met")
+                   self.player2.username + ", a win condition has been met", LogCodes.Match)
 
         self.match_valid = False
 
         self.result = Flags.SUCCESS
         if self.player1.winner and self.player2.winner:
 
-            Logger.log("The match is draw no winner")
+            Logger.log("The match is draw no winner", LogCodes.Match)
             self.result = Flags.DRAW
             self.alert_players(Flags.END_MATCH, Flags.ONE_BYTE, Flags.DRAW)
 
         elif self.player1.winner:
 
-            Logger.log(self.player1.username + " has won the match")
+            Logger.log(self.player1.username + " has won the match", LogCodes.Match)
             self.winner = self.player1
             response = Network.generate_responseb(Flags.END_MATCH, Flags.ONE_BYTE, Flags.SUCCESS)
             Network.send_data(self.player1.username, self.player1.connection, response)
@@ -152,7 +156,7 @@ class Match:
 
         else:
 
-            Logger.log(self.player2.username + " has won the match")
+            Logger.log(self.player2.username + " has won the match", LogCodes.Match)
             self.winner = self.player2
             response = Network.generate_responseb(Flags.END_MATCH, Flags.ONE_BYTE, Flags.SUCCESS)
             Network.send_data(self.player2.username, self.player2.connection, response)
@@ -191,48 +195,45 @@ class Match:
 
                 else:
 
-                    Logger.log("One of the players did not select a cat - Killing the match")
+                    Logger.log("One of the players did not select a cat - Killing the match", LogCodes.Match)
                     self.kill_match()
 
     # Notifies players about cats abilities and chances before game moves on
     def post_setup(self):
 
         Logger.log("Post setup running for " + self.player1.username +
-                   ", " + self.player2.username)
-
-        # Send player2 player1's cat
-        response = Network.generate_responseb(Flags.OP_CAT, Flags.ONE_BYTE, self.player1.cat)
-        Network.send_data(self.player2.username, self.player2.connection, response)
+                   ", " + self.player2.username, LogCodes.Match)
 
         # Send player1 player2's cat
-        response = Network.generate_responseb(Flags.OP_CAT, Flags.ONE_BYTE, self.player2.cat)
-        Network.send_data(self.player1.username, self.player1.connection, response)
+        p1_response = Network.generate_responseb(Flags.OP_CAT, Flags.ONE_BYTE, self.player2.cat)
+
+        # Send player2 player1's cat
+        p2_response = Network.generate_responseb(Flags.OP_CAT, Flags.ONE_BYTE, self.player1.cat)
 
         # Send player1 their random ability
-        response = Network.generate_responseb(Flags.GAIN_ABILITY, Flags.ONE_BYTE, self.player1.rability)
-        Network.send_data(self.player1.username, self.player1.connection, response)
+        p1_response += Network.generate_responseb(Flags.GAIN_ABILITY, Flags.ONE_BYTE, self.player1.rability)
 
         # Send player2 their random ability
-        response = Network.generate_responseb(Flags.GAIN_ABILITY, Flags.ONE_BYTE, self.player2.rability)
-        Network.send_data(self.player2.username, self.player2.connection, response)
+        p2_response += Network.generate_responseb(Flags.GAIN_ABILITY, Flags.ONE_BYTE, self.player2.rability)
 
         # Send player1 their two random chance cards
-        response = Network.generate_responseh(Flags.GAIN_CHANCES, Flags.TWO_BYTE)
-        response.append(self.player1.chance_cards[0])
-        response.append(self.player1.chance_cards[1])
-        Network.send_data(self.player1.username, self.player1.connection, response)
+        p1_response += Network.generate_responseh(Flags.GAIN_CHANCES, Flags.TWO_BYTE)
+        p1_response.append(self.player1.chance_cards[0])
+        p1_response.append(self.player1.chance_cards[1])
 
         # Send player2 their two random chance cards
-        response = Network.generate_responseh(Flags.GAIN_CHANCES, Flags.TWO_BYTE)
-        response.append(self.player2.chance_cards[0])
-        response.append(self.player2.chance_cards[1])
-        Network.send_data(self.player2.username, self.player2.connection, response)
+        p2_response = Network.generate_responseh(Flags.GAIN_CHANCES, Flags.TWO_BYTE)
+        p2_response.append(self.player2.chance_cards[0])
+        p2_response.append(self.player2.chance_cards[1])
+
+        Network.send_data(self.player1.username, self.player1.connection, p1_response)
+        Network.send_data(self.player2.username, self.player2.connection, p2_response)
 
     # Activates any prelude passive abilities the players have
     def gloria_prelude(self):
 
         Logger.log("Prelude phase starting for " + self.player1.username +
-                   ", " + self.player2.username)
+                   ", " + self.player2.username, LogCodes.Match)
 
         # Reset players per round stats
         self.reset_attributes(self.player1)
@@ -268,7 +269,7 @@ class Match:
     def gloria_enact_strats(self):
 
         Logger.log("Enact Strategies phase starting for " + self.player1.username +
-                   ", " + self.player2.username)
+                   ", " + self.player2.username, LogCodes.Match)
 
     def enact_strats(self, player, request):
 
@@ -295,39 +296,36 @@ class Match:
 
                 else:
 
-                    Logger.log("One of the players did not select a move - Killing match")
+                    Logger.log("One of the players did not select a move - Killing match", LogCodes.Match)
                     self.kill_match()
 
     def gloria_show_cards(self):
 
         Logger.log("Show Cards phase starting for " + self.player1.username +
-                   ", " + self.player2.username)
+                   ", " + self.player2.username, LogCodes.Match)
 
         # Show player1 player2's move
-        response = Network.generate_responseb(Flags.REVEAL_MOVE, Flags.ONE_BYTE, self.player2.move)
-        Network.send_data(self.player1.username, self.player1.connection, response)
+        p1_response = Network.generate_responseb(Flags.REVEAL_MOVE, Flags.ONE_BYTE, self.player2.move)
 
         # Show player2 player1's move
-        response = Network.generate_responseb(Flags.REVEAL_MOVE, Flags.ONE_BYTE, self.player1.move)
-        Network.send_data(self.player2.username, self.player2.connection, response)
+        p2_response = Network.generate_responseb(Flags.REVEAL_MOVE, Flags.ONE_BYTE, self.player1.move)
 
         # Show player1 player2's chance card if they selected one
         if self.player2.selected_chance:
-            response = Network.generate_responseb(
+            p1_response += Network.generate_responseb(
                 Flags.REVEAL_CHANCE, Flags.ONE_BYTE, self.player2.used_card)
         else:
-            response = Network.generate_responseh(Flags.REVEAL_CHANCE, Flags.ZERO_BYTE)
-
-        Network.send_data(self.player1.username, self.player1.connection, response)
+            p1_response += Network.generate_responseh(Flags.REVEAL_CHANCE, Flags.ZERO_BYTE)
 
         # Show player2 player1's chance card if they selected one
         if self.player1.selected_chance:
-            response = Network.generate_responseb(
+            p2_response += Network.generate_responseb(
                 Flags.REVEAL_CHANCE, Flags.ONE_BYTE, self.player1.used_card)
         else:
-            response = Network.generate_responseh(Flags.REVEAL_CHANCE, Flags.ZERO_BYTE)
+            p2_response += Network.generate_responseh(Flags.REVEAL_CHANCE, Flags.ZERO_BYTE)
 
-        Network.send_data(self.player2.username, self.player2.connection, response)
+        Network.send_data(self.player1.username, self.player1.connection, p1_response)
+        Network.send_data(self.player2.username, self.player2.connection, p2_response)
 
     def show_cards(self, player, request):
 
@@ -343,7 +341,7 @@ class Match:
     def gloria_settle_strats(self):
 
         Logger.log("Settle Strategies phase starting for " + self.player1.username +
-                   ", " + self.player2.username)
+                   ", " + self.player2.username, LogCodes.Match)
 
         # Use player1's chance card if pre settle
         if self.player1.selected_chance and Chance.pre_settle(self.player1.used_card):
@@ -353,8 +351,26 @@ class Match:
         if self.player2.selected_chance and Chance.pre_settle(self.player2.used_card):
             Chance.use_chance(self.player2.used_card, self.player2)
 
-        player = self.get_random_player()
-        opponent = self.get_opponent(player.username)
+        # Determine combat order
+        # Player1 goes first if they have spotlight and player2 does not
+        if self.player1.spotlight and not self.player2.spotlight:
+
+            player = self.player1
+            opponent = self.player2
+
+        # Player2 goes first if they have spotlight and player2 does not
+        elif self.player2.spotlight and not self.player1.spotlight:
+
+            player = self.player2
+            opponent = self.player1
+
+        # Randomly choose order if neither or both players have spotlight
+        else:
+
+            player = self.get_random_player()
+            opponent = self.get_opponent(player.username)
+
+        # var player is the designated variable for who does first
         self.handle_combat(player, opponent)
         self.handle_combat(opponent, player)
 
@@ -375,36 +391,33 @@ class Match:
         # Send new HPs to clients
         # Send player1 their damage taken and notify opponent as well
         damage_taken = self.player1.health
-        response = Network.generate_responseb(
+        p1_response = Network.generate_responseb(
             Flags.GAIN_HP, Flags.ONE_BYTE, damage_taken)
-        Network.send_data(self.player1.username, self.player1.connection, response)
 
-        response = Network.generate_responseb(
+        p2_response = Network.generate_responseb(
             Flags.OP_GAIN_HP, Flags.ONE_BYTE, damage_taken)
-        Network.send_data(self.player2.username, self.player2.connection, response)
 
         # Send player2 their damage taken and notify opponent as well
         damage_taken = self.player2.health
-        response = Network.generate_responseb(
+        p2_response += Network.generate_responseb(
             Flags.GAIN_HP, Flags.ONE_BYTE, damage_taken)
-        Network.send_data(self.player2.username, self.player2.connection, response)
 
-        response = Network.generate_responseb(
+        p1_response += Network.generate_responseb(
             Flags.OP_GAIN_HP, Flags.ONE_BYTE, damage_taken)
-        Network.send_data(self.player1.username, self.player1.connection, response)
 
         # Send all chance cards each player has
         # Send for player1
-        response = Network.generate_responseh(Flags.GAIN_CHANCES, len(self.player1.chance_cards))
+        p1_response += Network.generate_responseh(Flags.GAIN_CHANCES, len(self.player1.chance_cards))
         for chance_card in self.player1.chance_cards:
-            response.append(chance_card)
-        Network.send_data(self.player1.username, self.player1.connection, response)
+            p1_response.append(chance_card)
 
         # Send for player2
-        response = Network.generate_responseh(Flags.GAIN_CHANCES, len(self.player2.chance_cards))
+        p2_response += Network.generate_responseh(Flags.GAIN_CHANCES, len(self.player2.chance_cards))
         for chance_card in self.player2.chance_cards:
-            response.append(chance_card)
-        Network.send_data(self.player2.username, self.player2.connection, response)
+            p2_response.append(chance_card)
+
+        Network.send_data(self.player1.username, self.player1.connection, p1_response)
+        Network.send_data(self.player2.username, self.player2.connection, p2_response)
 
         self.check_winner()
 
@@ -421,7 +434,7 @@ class Match:
     def gloria_postlude(self):
 
         Logger.log("Postlude phase starting for " + self.player1.username +
-                   ", " + self.player2.username)
+                   ", " + self.player2.username, LogCodes.Match)
 
         Ability.use_passive_ability(self.player1, self.player2, self.phase, self.player1.cat)
         Ability.use_passive_ability(self.player1, self.player2, self.phase, self.player1.rability)
@@ -512,11 +525,11 @@ class Match:
 
         if cat_selected:
             Logger.log(player.username + " has selected their cat" +
-                       " - id: " + str(cat_id))
+                       " - id: " + str(cat_id), LogCodes.Match)
 
         else:
             Logger.log(player.username + " could not select their cat" +
-                       " - id: " + str(cat_id))
+                       " - id: " + str(cat_id), LogCodes.Match)
 
         response = Network.generate_responseb(Flags.SELECT_CAT, Flags.ONE_BYTE, int(cat_selected))
         Network.send_data(player.username, player.connection, response)
@@ -532,11 +545,11 @@ class Match:
 
         if move_selected:
             Logger.log(player.username + " has selected their move" +
-                       " - id: " + str(move))
+                       " - id: " + str(move), LogCodes.Match)
 
         else:
             Logger.log(player.username + " could not select their move" +
-                       " - id: " + str(move))
+                       " - id: " + str(move), LogCodes.Match)
 
         response = Network.generate_responseb(Flags.SELECT_MOVE, Flags.ONE_BYTE, int(move_selected))
         Network.send_data(player.username, player.connection, response)
@@ -552,11 +565,11 @@ class Match:
 
         if chance_selected:
             Logger.log(player.username + " has selected their chance" +
-                       " - id: " + str(chance))
+                       " - id: " + str(chance), LogCodes.Match)
 
         else:
             Logger.log(player.username + " could not select their chance" +
-                       " - id: " + str(chance))
+                       " - id: " + str(chance), LogCodes.Match)
 
         response = Network.generate_responseb(Flags.USE_CHANCE, Flags.ONE_BYTE, int(chance_selected))
         Network.send_data(player.username, player.connection, response)
@@ -606,6 +619,7 @@ class Match:
         player.reverse = False
         player.irreversible = False
         player.invulnerable = False
+        player.spotlight = False
 
         player.move = None
         player.selected_chance = False

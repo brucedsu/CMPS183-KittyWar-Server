@@ -1,6 +1,6 @@
 import random
 
-from logger import Logger
+from logger import Logger, LogCodes
 from network import Network, Flags
 from enum import IntEnum
 from cat import Moves
@@ -43,11 +43,11 @@ class Chance:
         has = player.chance_cards.count(chance) != 0
 
         if has:
-            Logger.log(player.username + " has chance card: " + str(chance))
+            Logger.log(player.username + " has chance card: " + str(chance), LogCodes.Chance)
         else:
-            Logger.log(player.username + " does not have chance card: " + str(chance))
+            Logger.log(player.username + " does not have chance card: " + str(chance), LogCodes.Chance)
 
-        Logger.log(player.username + "'s currently owned chance cards: " + str(player.chance_cards))
+        Logger.log(player.username + "'s currently owned chance cards: " + str(player.chance_cards), LogCodes.Chance)
 
         return has
 
@@ -59,8 +59,11 @@ class Chance:
         matches_move = Chance.matches_move(player, chance)
         has_chance = Chance.has_chance(player, chance)
         selected_chance = player.selected_chance
+        skipping = player.move == Moves.SKIP
 
-        valid = valid_chance and matches_move and has_chance and not selected_chance
+        valid = valid_chance and matches_move and has_chance \
+            and not selected_chance and not skipping
+
         if valid:
 
             player.used_cards.append(chance)
@@ -90,9 +93,9 @@ class Chance:
             else:
                 matches = player.move == Moves.SCRATCH
 
-        Logger.log(player.username + "'s selected move: " + str(player.move))
-        Logger.log(player.username + "'s chance they want to use: " + str(chance))
-        Logger.log(player.username + " chance matches move: " + str(matches))
+        Logger.log(player.username + "'s selected move: " + str(player.move), LogCodes.Chance)
+        Logger.log(player.username + "'s chance they want to use: " + str(chance), LogCodes.Chance)
+        Logger.log(player.username + " chance matches move: " + str(matches), LogCodes.Chance)
         return matches
 
     # Check if a particular chance should be used before settling the strategies
@@ -124,12 +127,12 @@ class Chance:
 
             player.health += 2
             player.healed += 2
-            Logger.log(player.username + " using Purr Chance 00 Double Purring")
-            Logger.log(player.username + " gained two health points for not taking damage")
+            Logger.log(player.username + " using Purr Chance 00 Double Purring", LogCodes.Chance)
+            Logger.log(player.username + " gained two health points for not taking damage", LogCodes.Chance)
             chance_used = True
 
         else:
-            Logger.log(player.username + " could not use Purr Chance 00 Double Purring")
+            Logger.log(player.username + " could not use Purr Chance 00 Double Purring", LogCodes.Chance)
 
         return chance_used
 
@@ -141,8 +144,8 @@ class Chance:
         player.health += 1
         player.healed += 1
         player.invulnerable = True
-        Logger.log(player.username + " using Purr Chance 01 Guaranteed Purring")
-        Logger.log(player.username + " gained one health point and is now invulnerable")
+        Logger.log(player.username + " using Purr Chance 01 Guaranteed Purring", LogCodes.Chance)
+        Logger.log(player.username + " gained one health point and is now invulnerable", LogCodes.Chance)
 
     # Chance 02 - Purr and Draw
     # Gain 1 chance card if you heal
@@ -153,12 +156,12 @@ class Chance:
         if player.healed > 0:
 
             Chance.random_chance(player)
-            Logger.log(player.username + " using Purr Chance 02 Purr and Draw")
-            Logger.log(player.username + " gained one chance card for healing")
+            Logger.log(player.username + " using Purr Chance 02 Purr and Draw", LogCodes.Chance)
+            Logger.log(player.username + " gained one chance card for healing", LogCodes.Chance)
             chance_used = True
 
         else:
-            Logger.log(player.username + " could not use Purr Chance 02 Purr and Draw")
+            Logger.log(player.username + " could not use Purr Chance 02 Purr and Draw", LogCodes.Chance)
 
         return chance_used
 
@@ -168,8 +171,8 @@ class Chance:
     def chance_03(player):
 
         player.reverse = True
-        Logger.log(player.username + " using Guard Chance 03 Reverse Scratch")
-        Logger.log(player.username + "'is reversing incoming damage")
+        Logger.log(player.username + " using Guard Chance 03 Reverse Scratch", LogCodes.Chance)
+        Logger.log(player.username + "'is reversing incoming damage", LogCodes.Chance)
 
     # Chance 04 - Guard and Heal
     # Gain 1 HP if you dodge
@@ -181,12 +184,12 @@ class Chance:
 
             player.health += 1
             player.healed += 1
-            Logger.log(player.username + " using Guard Chance 04 Guard and Heal")
-            Logger.log(player.username + " gained one health point for dodging")
+            Logger.log(player.username + " using Guard Chance 04 Guard and Heal", LogCodes.Chance)
+            Logger.log(player.username + " gained one health point for dodging", LogCodes.Chance)
             chance_used = True
 
         else:
-            Logger.log(player.username + " could not use Guard Chance 04 Guard and Heal")
+            Logger.log(player.username + " could not use Guard Chance 04 Guard and Heal", LogCodes.Chance)
 
         return chance_used
 
@@ -199,12 +202,12 @@ class Chance:
         if player.dmg_dodged > 0:
 
             Chance.random_chance(player)
-            Logger.log(player.username + " using Guard Chance 05 Guard and Draw")
-            Logger.log(player.username + " gained one chance card for dodging")
+            Logger.log(player.username + " using Guard Chance 05 Guard and Draw", LogCodes.Chance)
+            Logger.log(player.username + " gained one chance card for dodging", LogCodes.Chance)
             chance_used = True
 
         else:
-            Logger.log(player.username + " could not use Guard Chance 05 Guard and Draw")
+            Logger.log(player.username + " could not use Guard Chance 05 Guard and Draw", LogCodes.Chance)
 
         return chance_used
 
@@ -214,8 +217,8 @@ class Chance:
     def chance_06(player):
 
         player.irreversible = True
-        Logger.log(player.username + " using Scratch Chance 06 Can't Reverse")
-        Logger.log(player.username + "'s attack can't be reversed")
+        Logger.log(player.username + " using Scratch Chance 06 Can't Reverse", LogCodes.Chance)
+        Logger.log(player.username + "'s attack can't be reversed", LogCodes.Chance)
 
     # Chance 07 - Can't Guard
     # Scratch can't be dodged
@@ -223,8 +226,8 @@ class Chance:
     def chance_07(player):
 
         player.pierce = True
-        Logger.log(player.username + " using Scratch Chance 07 Can't Guard")
-        Logger.log(player.username + "'s attack can't be dodged")
+        Logger.log(player.username + " using Scratch Chance 07 Can't Guard", LogCodes.Chance)
+        Logger.log(player.username + "'s attack can't be dodged", LogCodes.Chance)
 
     # Chance 08 - Double Scratch
     # Scratch twice - x2 Damage
@@ -232,8 +235,8 @@ class Chance:
     def chance_08(player):
 
         player.modifier *= 2
-        Logger.log(player.username + " using Scratch Chance 08 Double Scratch")
-        Logger.log(player.username + "'s Attack Modifier: " + str(player.modifier))
+        Logger.log(player.username + " using Scratch Chance 08 Double Scratch", LogCodes.Chance)
+        Logger.log(player.username + "'s Attack Modifier: " + str(player.modifier), LogCodes.Chance)
 
     @staticmethod
     def chance_responses(chance_id, player, opponent):

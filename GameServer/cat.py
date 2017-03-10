@@ -11,7 +11,9 @@ class Moves(IntEnum):
     @staticmethod
     def select_move(player, move):
 
-        valid_move = Moves.valid_move(move)
+        # Make sure the move is valid and they have not already selected a move
+        valid_move = Moves.valid_move(move) and not player.move
+
         if valid_move:
             player.move = move
 
@@ -26,24 +28,19 @@ class Moves(IntEnum):
 class Cats(Enum):
 
     @staticmethod
-    def get_hp(cat_id):
+    def identify_cat(cat_id):
 
-        if cat_id == 0:
-            return Cats.Persian.hp
-        elif cat_id == 1:
-            return Cats.Ragdoll.hp
-        elif cat_id == 2:
-            return Cats.Maine.hp
+        if cat_id == Cats.Persian.id:
+            return Cats.Persian
 
-    @staticmethod
-    def get_ability(cat_id):
+        elif cat_id == Cats.Ragdoll.id:
+            return Cats.Ragdoll
 
-        if cat_id == 0:
-            return Cats.Persian.ability_id
-        elif cat_id == 1:
-            return Cats.Ragdoll.ability_id
-        elif cat_id == 2:
-            return Cats.Maine.ability_id
+        elif cat_id == Cats.Maine.id:
+            return Cats.Maine
+
+        else:
+            return Cats.Persian
 
     # Handles the user selecting a cat for the match
     @staticmethod
@@ -52,20 +49,26 @@ class Cats(Enum):
         # Verify user can select the cat they have
         valid_cat = False
 
-        for cat in player.cats:
+        selected_cat = Cats.identify_cat(cat_id)
+        for owned_cat in player.cats:
 
-            if cat == cat_id:
+            if selected_cat.id == owned_cat:
 
-                player.cat = cat
+                player.cat = selected_cat
                 valid_cat = True
                 break
 
         return valid_cat
 
-    Persian = (8, 0)
-    Ragdoll = (10, 1)
-    Maine = (12, 2)
+    # (ID, HP, ABILITY)
+    Persian =    (0,  8, 0)
+    Ragdoll =    (1, 10, 1)
+    Maine =      (2, 10, 2)
+    Shorthair =  (3, 10, 3)
+    Siamese =    (4, 10, 4)
+    Abyssinian = (5, 10, 5)
 
-    def __init__(self, hp, ability_id):
+    def __init__(self, id, hp, ability_id):
+        self.id = id
         self.hp = hp
         self.ability_id = ability_id
