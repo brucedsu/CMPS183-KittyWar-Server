@@ -3,7 +3,7 @@ import socket as sock
 from network import Network, WNetwork, Flags
 from threading import Thread
 from time import sleep
-from logger import Logger
+from logger import Logger, LogCodes
 
 
 class Session(Thread):
@@ -33,7 +33,7 @@ class Session(Thread):
     # Session Thread loop - runs until server is being shutdown or client disconnects
     def run(self):
 
-        Logger.log("New session started")
+        Logger.log("New session started", LogCodes.Session)
 
         if Network.check_wconnection(self.client):
 
@@ -66,9 +66,9 @@ class Session(Thread):
         self.shutdown()
         self.client.close()
 
-        Logger.log(self.userprofile['username'] + " disconnected")
+        Logger.log(self.userprofile['username'] + " disconnected", LogCodes.Session)
         Logger.log(
-            "Session thread for " + self.userprofile['username'] + " ending")
+            "Session thread for " + self.userprofile['username'] + " ending", LogCodes.Session)
 
     def shutdown(self):
 
@@ -87,8 +87,8 @@ class Session(Thread):
         flag = request.flag
 
         Logger.log("Request: " + str(flag) + " " + str(request.token) +
-                   " " + str(request.size))
-        Logger.log("Body: " + str(request.body))
+                   " " + str(request.size), LogCodes.Session)
+        Logger.log("Body: " + str(request.body), LogCodes.Session)
 
         # Check if the flag is valid
         if Flags.valid_flag(flag):
@@ -98,7 +98,7 @@ class Session(Thread):
                 if not self.verified(request):
                     Logger.log(
                         self.userprofile['username'] + " is not authorized to use flag " +
-                        str(flag) + ", closing this connection")
+                        str(flag) + ", closing this connection", LogCodes.Session)
 
                     self.kill()
                     return
@@ -121,7 +121,7 @@ class Session(Thread):
         else:
             Logger.log(
                 "Server does not support flag " + str(flag)
-                + ", closing this connection")
+                + ", closing this connection", LogCodes.Session)
 
     def verified(self, request):
 
@@ -145,7 +145,7 @@ class Session(Thread):
             self.shutdown()
 
         # Log the username
-        Logger.log("Body: " + username)
+        Logger.log("Body: " + username, LogCodes.Session)
         self.userprofile['username'] = username
 
         sql_stmts = [
@@ -167,17 +167,17 @@ class Session(Thread):
                 self.userprofile['token'] = result[0]['token']
                 self.authenticated = True
 
-                Logger.log(username + " authenticated")
+                Logger.log(username + " authenticated", LogCodes.Session)
                 response.append(Flags.SUCCESS)
 
             else:
-                Logger.log(username + " failed authentication")
+                Logger.log(username + " failed authentication", LogCodes.Session)
                 response.append(Flags.FAILURE)
 
         else:
             # Username is verified through django server so force close connection
             Logger.log(
-                "No username/id found for " + username + ", force closing connection")
+                "No username/id found for " + username + ", force closing connection", LogCodes.Session)
             self.shutdown()
 
         Network.send_data(self.userprofile['username'], self.client, response)
@@ -187,13 +187,13 @@ class Session(Thread):
 
         if self.authenticated:
 
-            Logger.log(self.userprofile['username'] + " is logging out")
+            Logger.log(self.userprofile['username'] + " is logging out", LogCodes.Session)
 
             sql_stmt = "UPDATE KittyWar_userprofile SET token='' WHERE user_id=\'{}\';"
             Network.sql_query(sql_stmt.format(self.userprofile['userid']))
             self.authenticated = False
 
-            Logger.log(self.userprofile['username'] + " has logged out")
+            Logger.log(self.userprofile['username'] + " has logged out", LogCodes.Session)
 
         self.shutdown()
 
@@ -269,7 +269,7 @@ class Session(Thread):
         if 'records' not in self.userprofile:
             self._user_profile()
 
-        Logger.log(self.userprofile['username'] + " is finding a match")
+        Logger.log(self.userprofile['username'] + " is finding a match", LogCodes.Match)
         self.lobby.put(self)
 
         # Periodically notify matchmaker and wait until match is found
@@ -279,7 +279,7 @@ class Session(Thread):
             self.match_event.clear()
             sleep(1)
 
-        Logger.log("Match starting for " + self.userprofile['username'])
+        Logger.log("Match starting for " + self.userprofile['username'], LogCodes.Match)
 
         # At this point a match has been found so notify client
         response = Network.generate_responseb(request.flag, Flags.ONE_BYTE, Flags.SUCCESS)

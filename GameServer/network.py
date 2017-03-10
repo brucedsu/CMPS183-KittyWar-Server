@@ -48,6 +48,8 @@ class Flags(IntEnum):
     GAIN_CHANCES = 57
     REVEAL_MOVE = 58
     REVEAL_CHANCE = 59
+    SPOTLIGHT = 60
+    OP_SPOTLIGHT = 61
 
     NEXT_PHASE = 98
     READY = 99

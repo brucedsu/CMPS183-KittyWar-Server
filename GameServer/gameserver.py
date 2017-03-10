@@ -6,6 +6,7 @@ import socket as sock
 import threading
 import tkinter
 import tkinter.scrolledtext
+import tkinter.ttk as ttk
 
 from network import Network
 from sessions import Session
@@ -13,14 +14,18 @@ from match import Match, Player
 from queue import Queue
 from logger import Logger
 
+server_port = 2056
 server_running = True
 
 
 def main():
 
+    # Server networking setup
+    # ##################################################################################################################
+
     # Create server
     server = sock.socket(sock.AF_INET, sock.SOCK_STREAM)
-    server_address = ('localhost', 2056)
+    server_address = ('localhost', server_port)
 
     # Prepare lobby and match making thread
     match_event = threading.Event()
@@ -52,24 +57,72 @@ def main():
     polling_thread.start()
 
     # Server GUI code
+    # ##################################################################################################################
     root = tkinter.Tk()
     root.geometry("600x600")
     root.title("KittyWar Game Server")
 
-    # Create text display
-    server_display = tkinter.scrolledtext.ScrolledText(root)
-    server_display.config(state=tkinter.DISABLED)
-    server_display.pack()
+    notebook = ttk.Notebook(root)
+
+    network_tab = ttk.Frame(notebook)
+    session_tab = ttk.Frame(notebook)
+    match_tab = ttk.Frame(notebook)
+    ability_tab = ttk.Frame(notebook)
+    chance_tab = ttk.Frame(notebook)
+
+    # Add tabs to the notebook and pack it
+    notebook.add(network_tab, text="Network")
+    notebook.add(session_tab, text="Session")
+    notebook.add(match_tab, text="Match")
+    notebook.add(ability_tab, text="Ability")
+    notebook.add(chance_tab, text="Chance")
+    notebook.pack()
+
+    # Create and packet text displays
+    windows = [
+        tkinter.scrolledtext.ScrolledText(network_tab),
+        tkinter.scrolledtext.ScrolledText(session_tab),
+        tkinter.scrolledtext.ScrolledText(match_tab),
+        tkinter.scrolledtext.ScrolledText(ability_tab),
+        tkinter.scrolledtext.ScrolledText(chance_tab)]
+
+    for window in windows:
+
+        window.config(state=tkinter.DISABLED)
+        window.pack()
 
     # Create shutdown button
     shutdown_button = tkinter.Button(root, text="Shutdown Server", command=shutdown_server)
     shutdown_button.pack()
 
-    # Start GUI and set update to every 100ms
-    root.after(100, update_display, (root, server_display))
+    # Start GUI and set update to every 250ms
+    root.after(Logger.log_interval, update_display, (root, windows))
     root.mainloop()
 
 
+# Updates the server GUI based on log interval
+def update_display(root_pkg):
+
+    root = root_pkg[0]
+    windows = root_pkg[1]
+
+    window_index = 0
+    for window in windows:
+
+        log_count = Logger.log_count(window_index)
+        for log_index in range(0, log_count):
+
+            window.config(state=tkinter.NORMAL)
+            window.insert(tkinter.END, "{}\n".format(Logger.retrieve(window_index)))
+            window.pack()
+            window.config(state=tkinter.DISABLED)
+
+        window_index += 1
+
+    root.after(Logger.log_interval, update_display, (root, windows))
+
+
+# Grab latest card data from the database
 def pull_card_data():
 
     card_information = {}
@@ -93,22 +146,6 @@ def pull_card_data():
     # print(card_information['abilities'])
 
     return card_information
-
-
-def update_display(root_display):
-
-    root = root_display[0]
-    server_display = root_display[1]
-
-    log_count = Logger.log_count()
-    for i in range(0, log_count):
-
-        server_display.config(state=tkinter.NORMAL)
-        server_display.insert(tkinter.END, "{}\n".format(Logger.retrieve()))
-        server_display.pack()
-        server_display.config(state=tkinter.DISABLED)
-
-    root.after(100, update_display, (root, server_display))
 
 
 def poll_connections(server):
