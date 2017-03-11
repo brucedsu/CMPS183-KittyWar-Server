@@ -21,6 +21,7 @@ class Flags(IntEnum):
     SUCCESS = 1
     DRAW = 2
     ERROR = 3
+    CLOSE = 8
 
     ZERO_BYTE = 0
     ONE_BYTE = 1
@@ -72,17 +73,18 @@ class Request:
 # Helper class that contains useful network functions
 class Network:
 
-    # Translates an int to 3 bytes - returns byte array object
+    # Translates an int to x bytes - returns byte array object
+    # byte_f - byte_format
     @staticmethod
-    def int_3byte(num):
+    def int_xbyte(num, byte_f):
 
-        _3byte = bytearray()
-        for i in range(0, 3):
+        _bytes = bytearray()
+        for i in range(0, byte_f):
 
-            _3byte.insert(0, num & 0xFF)
+            _bytes.insert(0, num & 0xFF)
             num >>= 8
 
-        return _3byte
+        return _bytes
 
     # Determines if the connection is from a WebSocket
     @staticmethod
@@ -105,7 +107,7 @@ class Network:
 
         response = bytearray()
         response.append(flag)
-        response += Network.int_3byte(size)
+        response += Network.int_xbyte(size, 3)
         return response
 
     # Creates header with flag and size and attaches response body
@@ -135,14 +137,15 @@ class Network:
         db = Network.db_connection()
 
         result = None
+        # noinspection PyBroadException
         try:
             with db.cursor(DictCursor) as cursor:
 
                 cursor.execute(query)
                 result = cursor.fetchall()
         except:
-            print("The following query did not properly execute: " + query)
-            Logger.log("The following query did not properly execute: " + query)
+            # print("The following query did not properly execute: " + query)
+            Logger.log("The following query did not properly execute: " + query + "\n")
 
         finally:
             db.close()
@@ -173,7 +176,7 @@ class Network:
     @staticmethod
     def send_data(username, client, data):
 
-        Logger.log(username + " Response: " + str(data))
+        Logger.log(username + " Response: " + str(data) + "\n")
 
         # noinspection PyBroadException
         try:
@@ -193,7 +196,7 @@ class Network:
         body = None
         if size > 0:
             body = Network.receive_data(client, size)
-            Logger.log("Raw Body: " + str(body))
+            Logger.log("Raw Body: " + str(body) + "\n")
 
         if body:
             body = body.decode('utf-8')
@@ -231,7 +234,32 @@ class WNetwork(Network):
     def parse_request(client, data):
 
         payload = WNetwork.read_frame(client, data)
-        Logger.log("Payload: " + str(payload))
+        if not payload:
+            return None
+
+        Logger.log("Raw Payload: " + str(payload))
+
+        flag = payload[0]
+        token = payload[1:25].decode('utf-8')
+        body = payload[25:len(payload)]
+
+        if body:
+
+            Logger.log("Raw Body: " + str(body) + "\n")
+            body = body.decode('utf-8')
+
+        # Web Sockets - set size to 0 and ignore
+        size = 0
+
+        request = Request(flag, token, size, body)
+        return request
+
+    # Creates response header with flag and size
+    @staticmethod
+    def generate_responseh(flag, size):
+
+        response = WNetwork.write_frame(flag, size)
+        return response
 
     @staticmethod
     def read_frame(client, data):
@@ -240,9 +268,20 @@ class WNetwork(Network):
         while True:
 
             fin = (data[0] & 0x80) >> 7
-            # opcode = (data[0] & 0x0F)
-            # mask = (data[1] & 0x80) >> 7
+            opcode = (data[0] & 0x0F)
+            mask = (data[1] & 0x80) >> 7
             payload_len = (data[1] & 0x7F)
+
+            Logger.log("Raw Frame: " + str(binascii.hexlify(data)) + "\n" +
+                       "Fin: " + str(fin) + "\n" +
+                       "Opcode: " + str(opcode) + "\n" +
+                       "Mask: " + str(mask) + "\n" +
+                       "Payload Length: " + str(payload_len) + "\n")
+
+            if opcode == Flags.CLOSE or payload_len < 25:
+
+                Logger.log("Frame close opcode/Invalid payload length detected" + "\n")
+                return None
 
             if payload_len == 126:
                 payload_len = WNetwork.receive_data(client, 2)  # or 0
@@ -261,3 +300,37 @@ class WNetwork(Network):
             data = WNetwork.receive_data(client, 2)
 
         return decoded_payload
+
+    @staticmethod
+    def write_frame(flag, size):
+
+        response = bytearray()
+
+        # FIN 1 RSVS 000 OPCODE 0010
+        # 10000010 - 0x82
+        response.append(0x82)
+
+        # iOS code never regarded the flag as body but Web Sockets do!
+        # Add one to the size to account for the flag
+        size += 1
+
+        # Mask 0
+        # Size under or at 7 bit limit
+        if size <= 125:
+            response.append(size)
+
+        # Size under or at 16 bit limit
+        elif size <= 65535:
+
+            response.append(126)
+            response += WNetwork.int_xbyte(size, 2)
+
+        # Size will be around 64 bit limit
+        else:
+
+            response.append(127)
+            response += WNetwork.int_xbyte(size, 8)
+
+        response.append(flag)
+
+        return response

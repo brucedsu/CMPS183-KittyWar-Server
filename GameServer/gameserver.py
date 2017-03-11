@@ -62,8 +62,7 @@ def main():
     root.geometry("600x600")
     root.title("KittyWar Game Server")
 
-    notebook = ttk.Notebook(root)
-
+    notebook = ttk.Notebook(root, padding="10")
     network_tab = ttk.Frame(notebook)
     session_tab = ttk.Frame(notebook)
     match_tab = ttk.Frame(notebook)
@@ -71,7 +70,7 @@ def main():
     chance_tab = ttk.Frame(notebook)
 
     # Add tabs to the notebook and pack it
-    notebook.add(network_tab, text="Network")
+    notebook.add(network_tab, text="Server/Network")
     notebook.add(session_tab, text="Session")
     notebook.add(match_tab, text="Match")
     notebook.add(ability_tab, text="Ability")
@@ -161,7 +160,7 @@ def poll_connections(server):
         except sock.timeout:
             continue
 
-        Logger.log("Anonymous user connected from address: " + client_address[0])
+        Logger.log("Anonymous user connected from address: " + client_address[0] + "\n")
         new_session = Session((client, client_address))
         new_session.start()
 
@@ -206,21 +205,24 @@ def match_maker(match_event, lobby):
 def create_match(session1, session2):
 
     p1_name = session1.userprofile['username']
-    p1_connection = session1.client
     p1_cats = session1.userprofile['records']['cats']
-    player1 = Player(p1_name, p1_connection, p1_cats)
+    p1_network = session1.network
+    p1_socket = session1.client
+
+    player1 = Player(p1_name, p1_cats, p1_network, p1_socket)
 
     p2_name = session2.userprofile['username']
-    p2_connection = session2.client
     p2_cats = session2.userprofile['records']['cats']
-    player2 = Player(p2_name, p2_connection, p2_cats)
+    p2_network = session2.network
+    p2_socket = session2.client
+    player2 = Player(p2_name, p2_cats, p2_network, p2_socket)
 
     Logger.log("Creating match for " + p1_name +
                " & " + p2_name)
 
     match = Match()
-    match.player1 = player1
-    match.player2 = player2
+    match.p1 = player1
+    match.p2 = player2
 
     session1.match = match
     session2.match = match

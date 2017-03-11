@@ -78,7 +78,10 @@ class Ability:
         return ability_used
 
     @staticmethod
-    def use_passive_ability(player, opponent, phase, ability_id):
+    def use_passive_ability(player, opponent, phase, ability_id=None):
+
+        if ability_id is None:
+            ability_id = player.cat.ability_id
 
         useable = not Ability.on_cooldown(player, ability_id)
         if useable and Ability.is_passive(ability_id):
