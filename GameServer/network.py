@@ -176,7 +176,7 @@ class Network:
     @staticmethod
     def send_data(username, client, data):
 
-        Logger.log(username + " Response: " + str(data) + "\n")
+        Logger.log(username + " Response: " + str(binascii.hexlify(data)) + "\n")
 
         # noinspection PyBroadException
         try:
@@ -240,7 +240,9 @@ class WNetwork(Network):
         Logger.log("Raw Payload: " + str(payload))
 
         flag = payload[0]
-        token = payload[1:25].decode('utf-8')
+
+        # Disable utf-8 token decoding
+        token = payload[1:25]  # .decode('utf-8')
         body = payload[25:len(payload)]
 
         if body:
@@ -259,6 +261,14 @@ class WNetwork(Network):
     def generate_responseh(flag, size):
 
         response = WNetwork.write_frame(flag, size)
+        return response
+
+    @staticmethod
+    def generate_responseb(flag, size, body):
+
+        response = WNetwork.generate_responseh(flag, size)
+        response.append(body)
+
         return response
 
     @staticmethod
