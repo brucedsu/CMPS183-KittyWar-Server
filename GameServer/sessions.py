@@ -193,7 +193,7 @@ class Session(Thread):
 
         user_id = -1
         if request.body:
-            user_id = ord(request.body)
+            user_id = int(request.body)
 
         self.userprofile['userid'] = user_id
 

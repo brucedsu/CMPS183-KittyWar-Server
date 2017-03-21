@@ -249,7 +249,8 @@ class WNetwork(Network):
         if body:
 
             Logger.log("Raw Body: " + str(body) + "\n")
-            body = body.decode('utf-8')
+            body = int.from_bytes(body, byteorder='big')
+            body = str(body)
 
         # Web Sockets - set size to 0 and ignore
         size = 0
