@@ -216,7 +216,7 @@ class Match:
         p1_response.append(self.p1.chance_cards[1])
 
         # Send player2 their two random chance cards
-        p2_response = self.p2.network.generate_responseh(Flags.GAIN_CHANCES, Flags.TWO_BYTE)
+        p2_response += self.p2.network.generate_responseh(Flags.GAIN_CHANCES, Flags.TWO_BYTE)
         p2_response.append(self.p2.chance_cards[0])
         p2_response.append(self.p2.chance_cards[1])
 
