@@ -96,15 +96,16 @@ class Session(Thread):
         # Check if the flag is valid
         if Flags.valid_flag(flag):
 
+            # Disregard identity checking for web app testing
             # Check user identity for sensitive operations
-            if flag > Flags.LOGOUT:
-                if not self.verified(request):
-                    Logger.log(
-                        self.userprofile['username'] + " is not authorized to use flag " +
-                        str(flag) + ", closing this connection", LogCodes.Session)
+            # if flag > Flags.LOGOUT:
+            #     if not self.verified(request):
+            #        Logger.log(
+            #        self.userprofile['username'] + " is not authorized to use flag " +
+            #        str(flag) + ", closing this connection", LogCodes.Session)
 
-                    self.kill()
-                    return
+            #        self.kill()
+            #        return
 
             # Check if the flag pertains to the session
             if flag in request_map:
