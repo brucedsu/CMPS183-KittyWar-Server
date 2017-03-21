@@ -188,6 +188,15 @@ class Session(Thread):
 
         self.network.send_data(self.userprofile['username'], self.client, response)
 
+    # Logs user in for profile records - only pertains to web app
+    def web_login(self, request):
+
+        user_id = -1
+        if request.body:
+            user_id = int(request.body)
+
+        self.userprofile['userid'] = user_id
+
     # Logs the user out by deleting their token and ending the session
     def logout(self, request=None):
 
@@ -293,7 +302,9 @@ class Session(Thread):
 
 request_map = {
 
-    Flags.LOGIN: Session.login, Flags.LOGOUT: Session.logout,
+    Flags.LOGIN:         Session.login,
+    Flags.WEB_LOGIN:     Session.web_login,
+    Flags.LOGOUT:        Session.logout,
     Flags.FIND_MATCH:    Session.find_match,
     Flags.USER_PROFILE:  Session.user_profile,
     Flags.ALL_CARDS:     Session.all_cards,
