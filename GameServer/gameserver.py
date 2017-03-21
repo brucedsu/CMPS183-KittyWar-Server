@@ -208,7 +208,6 @@ def create_match(session1, session2):
     p1_cats = session1.userprofile['records']['cats']
     p1_network = session1.network
     p1_socket = session1.client
-
     player1 = Player(p1_name, p1_cats, p1_network, p1_socket)
 
     p2_name = session2.userprofile['username']
