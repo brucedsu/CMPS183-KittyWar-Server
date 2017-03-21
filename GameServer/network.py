@@ -37,6 +37,7 @@ class Flags(IntEnum):
     CHANCE_CARDS = 7
     ABILITY_CARDS = 8
     END_MATCH = 9
+    WEB_LOGIN = 10
 
     OP_CAT = 49
     GAIN_HP = 50
