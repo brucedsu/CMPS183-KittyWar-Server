@@ -197,6 +197,12 @@ class Session(Thread):
 
         self.userprofile['userid'] = user_id
 
+        sql_stmt = "SELECT username FROM auth_user WHERE id=\'{}\';"
+        sql_stmt = sql_stmt.format(self.userprofile['userid']);
+        username = self.network.sql_query(sql_stmt)
+
+        self.userprofile['username'] = username[0]['username']
+
     # Logs the user out by deleting their token and ending the session
     def logout(self, request=None):
 
