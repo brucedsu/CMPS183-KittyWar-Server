@@ -322,10 +322,10 @@ class Ability:
                 Flags.OP_GAIN_CHANCE, Flags.ZERO_BYTE)
 
         if player_response:
-            Network.send_data(player.username, player.connection, player_response)
+            Network.send_data(player.username, player.socket, player_response)
 
         if opponent_response:
-            Network.send_data(opponent.username, opponent.connection, opponent_response)
+            Network.send_data(opponent.username, opponent.socket, opponent_response)
 
 active_map = {
 
